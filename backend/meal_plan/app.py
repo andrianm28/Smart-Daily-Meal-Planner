@@ -4,8 +4,8 @@ from flask import Flask, request, Response, stream_with_context
 
 app = Flask(__name__)
 
-BEDROCK_CLIENT = boto3.client("bedrock-runtime", region_name="ap-southeast-1")
-MODEL_ID = "global.anthropic.claude-haiku-4-5-20251001-v1:0-20260217-v1:0"
+BEDROCK_CLIENT = boto3.client("bedrock-runtime", region_name="ap-southeast-5")
+MODEL_ID = "global.anthropic.claude-haiku-4-5-20251001-v1:0"
 
 CORS_HEADERS = {
     "Access-Control-Allow-Origin": "*",

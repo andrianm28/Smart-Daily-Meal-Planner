@@ -44,11 +44,9 @@ Resources:
                   - bedrock:InvokeModelWithResponseStream
                 Resource:
                   # Global cross-region inference profile
-                  - !Sub "arn:aws:bedrock:*:${AWS::AccountId}:inference-profile/global.anthropic.claude-haiku-4-5-20251001-v1:0-20260217-v1:0"
-                  # Regional foundation model (ap-southeast-1 + cross-region destinations)
-                  - "arn:aws:bedrock:*::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0-20260217-v1:0"
-                  # Wildcard foundation-model ARN variant used by some SDKs
-                  - "arn:aws:bedrock:::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0-20260217-v1:0"
+                  - !Sub "arn:aws:bedrock:*:${AWS::AccountId}:inference-profile/global.anthropic.claude-haiku-4-5-20251001-v1:0"
+                  # Regional foundation model
+                  - "arn:aws:bedrock:*::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0"
 
   # ---------------------------------------------------------------
   # Meal Plan Lambda — streaming Flask app
