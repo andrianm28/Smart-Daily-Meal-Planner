@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Daily Meal Planner Assistant</title>
+  <style>
+    /* ── Reset & Base ─────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green-50:  #faf5ff;
+      --green-100: #f3e8ff;
+      --green-200: #e9d5ff;
+      --green-500: #a855f7;
+      --green-600: #9333ea;
+      --green-700: #7e22ce;
+      --green-800: #6b21a8;
+      --gray-50:   #f9fafb;
+      --gray-100:  #f3f4f6;
+      --gray-200:  #e5e7eb;
+      --gray-300:  #d1d5db;
+      --gray-400:  #9ca3af;
+      --gray-500:  #6b7280;
+      --gray-600:  #4b5563;
+      --gray-700:  #374151;
+      --gray-800:  #1f2937;
+      --gray-900:  #111827;
+      --white:     #ffffff;
+      --radius:    0.75rem;
+      --shadow:    0 4px 6px -1px rgb(0 0 0 / .08), 0 2px 4px -2px rgb(0 0 0 / .06);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / .08), 0 4px 6px -4px rgb(0 0 0 / .05);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--gray-50);
+      color: var(--gray-800);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* ── Header ──────────────────────────────────────────────── */
+    header {
+      background: linear-gradient(135deg, var(--green-700) 0%, var(--green-500) 100%);
+      color: var(--white);
+      padding: 2rem 1.5rem 1.5rem;
+      text-align: center;
+      box-shadow: var(--shadow-lg);
+    }
+    header h1 {
+      font-size: clamp(1.5rem, 4vw, 2.2rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    header p {
+      margin-top: .4rem;
+      font-size: .95rem;
+      opacity: .88;
+    }
+
+    /* ── Layout ──────────────────────────────────────────────── */
+    main {
+      max-width: 860px;
+      margin: 2rem auto;
+      padding: 0 1rem 4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* ── Card ────────────────────────────────────────────────── */
+    .card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.5rem;
+    }
+    .card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--green-700);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+    .card-title .badge {
+      font-size: .7rem;
+      font-weight: 600;
+      background: var(--green-100);
+      color: var(--green-700);
+      padding: .15rem .5rem;
+      border-radius: 999px;
+    }
+
+    /* ── Inputs ──────────────────────────────────────────────── */
+    .inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+    }
+    @media (max-width: 540px) { .inputs-grid { grid-template-columns: 1fr; } }
+
+    label {
+      display: block;
+      font-size: .85rem;
+      font-weight: 600;
+      color: var(--gray-700);
+      margin-bottom: .4rem;
+    }
+
+    select, input[type="number"] {
+      width: 100%;
+      padding: .55rem .75rem;
+      border: 1.5px solid var(--gray-200);
+      border-radius: .5rem;
+      font-size: .95rem;
+      color: var(--gray-800);
+      background: var(--white);
+      transition: border-color .15s;
+      appearance: none;
+    }
+    select:focus, input[type="number"]:focus {
+      outline: none;
+      border-color: var(--green-500);
+      box-shadow: 0 0 0 3px rgb(168 85 247 / .12);
+    }
+
+    /* Slider */
+    .slider-wrap { display: flex; align-items: center; gap: .75rem; }
+    input[type="range"] {
+      flex: 1;
+      accent-color: var(--green-600);
+      height: 4px;
+      cursor: pointer;
+    }
+    .slider-val {
+      min-width: 2rem;
+      text-align: center;
+      font-weight: 700;
+      color: var(--green-700);
+      font-size: 1.05rem;
+    }
+
+    /* ── Run All button ──────────────────────────────────────── */
+    .run-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: .5rem;
+      width: 100%;
+      padding: .85rem 1.5rem;
+      background: linear-gradient(135deg, var(--green-600), var(--green-500));
+      color: var(--white);
+      border: none;
+      border-radius: .6rem;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity .15s, transform .1s;
+      box-shadow: 0 2px 8px rgb(147 51 234 / .3);
+    }
+    .run-btn:hover  { opacity: .92; }
+    .run-btn:active { transform: scale(.98); }
+    .run-btn:disabled { opacity: .55; cursor: not-allowed; }
+
+    /* ── Output panel ────────────────────────────────────────── */
+    .output-panel {
+      height: 340px;
+      overflow-y: auto;
+      background: var(--gray-50);
+      border: 1.5px solid var(--gray-200);
+      border-radius: .6rem;
+      padding: 1rem;
+      font-size: .9rem;
+      line-height: 1.7;
+      scrollbar-width: thin;
+      scrollbar-color: var(--green-200) transparent;
+      position: relative;
+    }
+    .output-panel::-webkit-scrollbar { width: 5px; }
+    .output-panel::-webkit-scrollbar-thumb { background: var(--green-200); border-radius: 999px; }
+
+    .output-placeholder {
+      color: var(--gray-400);
+      font-style: italic;
+      font-size: .88rem;
+    }
+
+    /* ── Spinner ─────────────────────────────────────────────── */
+    .spinner-wrap {
+      display: none;
+      align-items: center;
+      gap: .6rem;
+      color: var(--green-600);
+      font-size: .85rem;
+      font-weight: 600;
+      margin-bottom: .75rem;
+    }
+    .spinner-wrap.active { display: flex; }
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2.5px solid var(--green-200);
+      border-top-color: var(--green-600);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Error banner ────────────────────────────────────────── */
+    .error-msg {
+      display: none;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #b91c1c;
+      border-radius: .5rem;
+      padding: .6rem .9rem;
+      font-size: .85rem;
+      margin-top: .5rem;
+    }
+    .error-msg.active { display: block; }
+
+    /* ── Markdown rendered lines ─────────────────────────────── */
+    .md-line {
+      display: block;
+      animation: fadeIn .18s ease-out both;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; } }
+
+    .md-line.h1 { font-size: 1.25rem; font-weight: 800; color: var(--green-700); margin: .6rem 0 .2rem; }
+    .md-line.h2 { font-size: 1.1rem;  font-weight: 700; color: var(--green-700); margin: .5rem 0 .2rem; }
+    .md-line.h3 { font-size: 1rem;    font-weight: 700; color: var(--green-800); margin: .4rem 0 .1rem; }
+    .md-line.hr { border: none; border-top: 1px solid var(--gray-200); margin: .6rem 0; display: block; }
+    .md-line.bullet  { padding-left: 1.2rem; }
+    .md-line.numlist { padding-left: 1.5rem; }
+    .md-line.blank   { height: .4rem; }
+
+    .cursor-blink::after {
+      content: "▋";
+      animation: blink .7s step-end infinite;
+      color: var(--green-600);
+    }
+    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+
+    /* ── Chat panel ──────────────────────────────────────────── */
+    .chat-panel {
+      border: 1.5px solid var(--gray-200);
+      border-radius: .6rem;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .chat-messages {
+      flex: 1;
+      min-height: 260px;
+      max-height: 420px;
+      overflow-y: auto;
+      padding: 1rem;
+      background: var(--gray-50);
+      display: flex;
+      flex-direction: column;
+      gap: .75rem;
+      scrollbar-width: thin;
+      scrollbar-color: var(--green-200) transparent;
+    }
+    .chat-messages::-webkit-scrollbar { width: 5px; }
+    .chat-messages::-webkit-scrollbar-thumb { background: var(--green-200); border-radius: 999px; }
+
+    .bubble {
+      max-width: 82%;
+      padding: .65rem .9rem;
+      border-radius: 1rem;
+      font-size: .9rem;
+      line-height: 1.6;
+      word-break: break-word;
+    }
+    .bubble.user {
+      align-self: flex-end;
+      background: var(--green-600);
+      color: var(--white);
+      border-bottom-right-radius: .25rem;
+    }
+    .bubble.assistant {
+      align-self: flex-start;
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      color: var(--gray-800);
+      border-bottom-left-radius: .25rem;
+    }
+    .bubble.assistant.streaming { min-width: 60px; }
+
+    .chat-input-row {
+      display: flex;
+      gap: .5rem;
+      padding: .75rem;
+      background: var(--white);
+      border-top: 1px solid var(--gray-200);
+    }
+    .chat-input {
+      flex: 1;
+      padding: .55rem .8rem;
+      border: 1.5px solid var(--gray-200);
+      border-radius: .5rem;
+      font-size: .9rem;
+      resize: none;
+      line-height: 1.5;
+      max-height: 120px;
+      overflow-y: auto;
+      font-family: inherit;
+      color: var(--gray-800);
+    }
+    .chat-input:focus {
+      outline: none;
+      border-color: var(--green-500);
+      box-shadow: 0 0 0 3px rgb(168 85 247 / .12);
+    }
+    .chat-send-btn {
+      padding: .55rem 1rem;
+      background: var(--green-600);
+      color: var(--white);
+      border: none;
+      border-radius: .5rem;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: .9rem;
+      transition: opacity .15s;
+      white-space: nowrap;
+    }
+    .chat-send-btn:hover    { opacity: .88; }
+    .chat-send-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    .chat-typing {
+      display: none;
+      align-items: center;
+      gap: .35rem;
+      padding: 0 1rem .5rem;
+      font-size: .8rem;
+      color: var(--gray-400);
+    }
+    .chat-typing.active { display: flex; }
+    .dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--green-500);
+      animation: bounce .9s ease-in-out infinite;
+    }
+    .dot:nth-child(2) { animation-delay: .15s; }
+    .dot:nth-child(3) { animation-delay: .3s;  }
+    @keyframes bounce { 0%,80%,100% { transform: translateY(0); } 40% { transform: translateY(-5px); } }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🥗 Smart Daily Meal Planner</h1>
+  <p>AI-powered personalized meal planning, right in your browser</p>
+</header>
+
+<main>
+
+  <!-- ── Widget 1 & 2: Inputs ─────────────────────────────────── -->
+  <div class="card">
+    <div class="card-title">⚙️ Your Preferences</div>
+    <div class="inputs-grid">
+
+      <!-- Dietary Preference -->
+      <div>
+        <label for="dietary-preference">Dietary Preference</label>
+        <select id="dietary-preference">
+          <option value="None">None</option>
+          <option value="Vegetarian">Vegetarian</option>
+          <option value="Vegan">Vegan</option>
+          <option value="Keto">Keto</option>
+          <option value="Gluten-Free">Gluten-Free</option>
+        </select>
+      </div>
+
+      <!-- Number of Days -->
+      <div>
+        <label for="num-days-slider">Number of Days: <span id="days-display">1</span></label>
+        <div class="slider-wrap">
+          <input type="range" id="num-days-slider" min="1" max="7" value="1"
+                 oninput="document.getElementById('days-display').textContent=this.value;
+                          document.getElementById('num-days-number').value=this.value;" />
+          <input type="number" id="num-days-number" min="1" max="7" value="1"
+                 style="width:64px;"
+                 oninput="const v=Math.min(7,Math.max(1,parseInt(this.value)||1));
+                          this.value=v;
+                          document.getElementById('num-days-slider').value=v;
+                          document.getElementById('days-display').textContent=v;" />
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Run All -->
+    <div style="margin-top:1.25rem;">
+      <button class="run-btn" id="run-all-btn" onclick="runAll()">
+        <span>✨</span> Generate Meal Plan
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Widget 3: Meal Plan output ───────────────────────────── -->
+  <div class="card">
+    <div class="card-title">
+      🍽️ Your Meal Plan
+      <span class="badge">AI Generated</span>
+    </div>
+
+    <div class="spinner-wrap" id="meal-plan-spinner">
+      <div class="spinner"></div>
+      Generating your meal plan…
+    </div>
+    <div class="error-msg" id="meal-plan-error"></div>
+
+    <div class="output-panel" id="meal-plan-output">
+      <span class="output-placeholder">
+        Select your preferences above and click "Generate Meal Plan" to get started.
+      </span>
+    </div>
+  </div>
+
+  <!-- ── Widget 4: Chat ───────────────────────────────────────── -->
+  <div class="card">
+    <div class="card-title">
+      💬 Meal Planning Chat
+      <span class="badge">AI Assistant</span>
+    </div>
+
+    <div class="chat-panel">
+      <div class="chat-messages" id="chat-messages">
+        <!-- Opening message injected by JS -->
+      </div>
+      <div class="chat-typing" id="chat-typing">
+        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+        <span>Assistant is typing…</span>
+      </div>
+      <div class="chat-input-row">
+        <textarea class="chat-input" id="chat-input" rows="1"
+          placeholder="Ask about grocery lists, meal swaps, cooking tips…"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat();}"></textarea>
+        <button class="chat-send-btn" id="chat-send-btn" onclick="sendChat()">Send</button>
+      </div>
+    </div>
+    <div class="error-msg" id="chat-error"></div>
+  </div>
+
+</main>
+
+<script>
+  // ── URL placeholders replaced by GitHub Actions sed ──────────
+  const STREAM_URLS = {
+    meal_plan:          '__URL_MEAL_PLAN__',
+    meal_planning_chat: '__URL_MEAL_PLANNING_CHAT__',
+  };
+
+  // ── Conversation history for the chat ────────────────────────
+  let chatHistory = [];
+  let currentMealPlan = "";   // accumulated text so chat has context
+  let isChatStreaming = false;
+
+  // ── On load: inject opening message ──────────────────────────
+  window.addEventListener('DOMContentLoaded', () => {
+    appendBubble(
+      'assistant',
+      'Hello! I\'m your personal meal planning assistant 🍽️ I can help you with ' +
+      'recipe ideas, substitutions, nutritional advice, grocery lists, and more. ' +
+      'What would you like help with today?'
+    );
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  // Markdown line renderer
+  // ═══════════════════════════════════════════════════════════════
+  function renderMdLine(text) {
+    const span = document.createElement('span');
+    span.className = 'md-line';
+
+    if (/^### /.test(text))       { span.classList.add('h3'); text = text.slice(4); }
+    else if (/^## /.test(text))   { span.classList.add('h2'); text = text.slice(3); }
+    else if (/^# /.test(text))    { span.classList.add('h1'); text = text.slice(2); }
+    else if (/^---+$/.test(text)) { span.classList.add('hr'); return span; }
+    else if (/^[-*] /.test(text)) { span.classList.add('bullet');  text = '• ' + text.slice(2); }
+    else if (/^\d+\. /.test(text)){ span.classList.add('numlist'); }
+    else if (text.trim() === '')  { span.classList.add('blank');   return span; }
+
+    // Inline: **bold**, *italic*, `code`
+    text = text
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g,     '<em>$1</em>')
+      .replace(/`(.+?)`/g,       '<code style="background:var(--gray-100);padding:.1em .35em;border-radius:.25em;font-size:.88em">$1</code>');
+
+    span.innerHTML = text;
+    return span;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Generic streaming fetch → output panel
+  // ═══════════════════════════════════════════════════════════════
+  async function streamToPanel(url, body, panelId, spinnerId, errorId, onDone) {
+    const panel   = document.getElementById(panelId);
+    const spinner = document.getElementById(spinnerId);
+    const errEl   = document.getElementById(errorId);
+
+    // Reset
+    panel.innerHTML = '';
+    errEl.classList.remove('active');
+    errEl.textContent = '';
+    spinner.classList.add('active');
+
+    let buffer = '';
+    let lastSpan = null;
+    let accumulated = '';
+
+    function flushLine(line) {
+      if (lastSpan) lastSpan.classList.remove('cursor-blink');
+      const sp = renderMdLine(line);
+      sp.classList.add('cursor-blink');
+      panel.appendChild(sp);
+      panel.scrollTop = panel.scrollHeight;
+      lastSpan = sp;
+    }
+
+    try {
+      const resp = await fetch(url, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(body),
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+      const reader  = resp.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        buffer      += chunk;
+        accumulated += chunk;
+
+        // Flush complete lines
+        const lines = buffer.split('\n');
+        buffer = lines.pop();          // keep incomplete last piece
+        for (const line of lines) flushLine(line);
+      }
+      // Flush any remaining text
+      if (buffer) flushLine(buffer);
+
+    } catch (err) {
+      errEl.textContent = '⚠️ ' + err.message;
+      errEl.classList.add('active');
+    } finally {
+      if (lastSpan) lastSpan.classList.remove('cursor-blink');
+      spinner.classList.remove('active');
+      if (onDone) onDone(accumulated);
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Run All
+  // ═══════════════════════════════════════════════════════════════
+  async function runAll() {
+    const btn  = document.getElementById('run-all-btn');
+    const pref = document.getElementById('dietary-preference').value;
+    const days = parseInt(document.getElementById('num-days-slider').value, 10);
+
+    btn.disabled = true;
+    btn.textContent = '⏳ Generating…';
+
+    await streamToPanel(
+      STREAM_URLS.meal_plan,
+      { dietary_preference: pref, num_days: days },
+      'meal-plan-output',
+      'meal-plan-spinner',
+      'meal-plan-error',
+      (text) => { currentMealPlan = text; }
+    );
+
+    btn.disabled = false;
+    btn.innerHTML = '<span>✨</span> Generate Meal Plan';
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Chat
+  // ═══════════════════════════════════════════════════════════════
+  function appendBubble(role, text) {
+    const wrap = document.getElementById('chat-messages');
+    const div  = document.createElement('div');
+    div.className = 'bubble ' + role;
+
+    if (role === 'assistant') {
+      // Render markdown into the bubble
+      const lines = text.split('\n');
+      for (const line of lines) {
+        div.appendChild(renderMdLine(line));
+      }
+    } else {
+      div.textContent = text;
+    }
+
+    wrap.appendChild(div);
+    wrap.scrollTop = wrap.scrollHeight;
+    return div;
+  }
+
+  async function sendChat() {
+    if (isChatStreaming) return;
+    const input   = document.getElementById('chat-input');
+    const sendBtn = document.getElementById('chat-send-btn');
+    const errEl   = document.getElementById('chat-error');
+    const typing  = document.getElementById('chat-typing');
+    const wrap    = document.getElementById('chat-messages');
+
+    const msg = input.value.trim();
+    if (!msg) return;
+
+    isChatStreaming = true;
+    input.value = '';
+    sendBtn.disabled = true;
+    errEl.classList.remove('active');
+
+    // Show user bubble
+    appendBubble('user', msg);
+
+    // Show typing indicator
+    typing.classList.add('active');
+
+    // Prepare assistant bubble for streaming
+    const assistantDiv = document.createElement('div');
+    assistantDiv.className = 'bubble assistant streaming';
+    wrap.appendChild(assistantDiv);
+    wrap.scrollTop = wrap.scrollHeight;
+
+    let accumulated = '';
+    let buffer      = '';
+    let lastSpan    = null;
+
+    function flushLine(line) {
+      if (lastSpan) lastSpan.classList.remove('cursor-blink');
+      const sp = renderMdLine(line);
+      sp.classList.add('cursor-blink');
+      assistantDiv.appendChild(sp);
+      wrap.scrollTop = wrap.scrollHeight;
+      lastSpan = sp;
+    }
+
+    try {
+      const resp = await fetch(STREAM_URLS.meal_planning_chat, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message:           msg,
+          history:           chatHistory,
+          meal_plan_context: currentMealPlan,
+        }),
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+      const reader  = resp.body.getReader();
+      const decoder = new TextDecoder();
+
+      typing.classList.remove('active');
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        buffer      += chunk;
+        accumulated += chunk;
+
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+        for (const line of lines) flushLine(line);
+      }
+      if (buffer) flushLine(buffer);
+
+    } catch (err) {
+      typing.classList.remove('active');
+      errEl.textContent = '⚠️ ' + err.message;
+      errEl.classList.add('active');
+      if (!accumulated) assistantDiv.remove();
+    } finally {
+      if (lastSpan) lastSpan.classList.remove('cursor-blink');
+      assistantDiv.classList.remove('streaming');
+      typing.classList.remove('active');
+
+      // Persist to history
+      if (accumulated) {
+        chatHistory.push({ role: 'user',      content: msg         });
+        chatHistory.push({ role: 'assistant', content: accumulated });
+      }
+
+      isChatStreaming  = false;
+      sendBtn.disabled = false;
+      input.focus();
+    }
+  }
+</script>
+</body>
+</html>
