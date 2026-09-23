@@ -11,7 +11,6 @@ Globals:
     Environment:
       Variables:
         AWS_LAMBDA_EXEC_WRAPPER: /opt/bootstrap
-        AWS_LWA_INVOKE_MODE: response_stream
         PORT: "8080"
     Layers:
       - !Sub "arn:aws:lambda:${AWS::Region}:753240598075:layer:LambdaAdapterLayerX86:27"
@@ -61,9 +60,50 @@ Resources:
       CodeUri: ../backend/meal_plan/
       Handler: run.sh
       Role: !GetAtt AppBedrockRole.Arn
-      FunctionUrlConfig:
-        AuthType: NONE
-        InvokeMode: RESPONSE_STREAM
+
+  MealPlanFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt MealPlanFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${MealPlanApi}/*/*"
+
+  MealPlanApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: smart-meal-planner-meal-plan-api
+      ProtocolType: HTTP
+      CorsConfiguration:
+        AllowOrigins:
+          - "*"
+        AllowMethods:
+          - POST
+          - OPTIONS
+        AllowHeaders:
+          - Content-Type
+
+  MealPlanIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref MealPlanApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt MealPlanFunction.Arn
+      PayloadFormatVersion: "2.0"
+
+  MealPlanRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref MealPlanApi
+      RouteKey: "POST /"
+      Target: !Sub "integrations/${MealPlanIntegration}"
+
+  MealPlanStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref MealPlanApi
+      StageName: "$default"
+      AutoDeploy: true
 
   # ---------------------------------------------------------------
   # Meal Planning Chat Lambda — streaming Flask app
@@ -75,9 +115,50 @@ Resources:
       CodeUri: ../backend/meal_planning_chat/
       Handler: run.sh
       Role: !GetAtt AppBedrockRole.Arn
-      FunctionUrlConfig:
-        AuthType: NONE
-        InvokeMode: RESPONSE_STREAM
+
+  MealPlanningChatFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt MealPlanningChatFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${MealPlanningChatApi}/*/*"
+
+  MealPlanningChatApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: smart-meal-planner-chat-api
+      ProtocolType: HTTP
+      CorsConfiguration:
+        AllowOrigins:
+          - "*"
+        AllowMethods:
+          - POST
+          - OPTIONS
+        AllowHeaders:
+          - Content-Type
+
+  MealPlanningChatIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref MealPlanningChatApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt MealPlanningChatFunction.Arn
+      PayloadFormatVersion: "2.0"
+
+  MealPlanningChatRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref MealPlanningChatApi
+      RouteKey: "POST /"
+      Target: !Sub "integrations/${MealPlanningChatIntegration}"
+
+  MealPlanningChatStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref MealPlanningChatApi
+      StageName: "$default"
+      AutoDeploy: true
 
   # ---------------------------------------------------------------
   # S3 bucket — static website hosting
@@ -113,12 +194,12 @@ Resources:
 # ---------------------------------------------------------------
 Outputs:
   MealPlanUrl:
-    Description: Function URL for the Meal Plan Lambda
-    Value: !GetAtt MealPlanFunctionUrl.FunctionUrl
+    Description: API Gateway URL for the Meal Plan Lambda
+    Value: !Sub "https://${MealPlanApi}.execute-api.${AWS::Region}.amazonaws.com/"
 
   MealPlanningChatUrl:
-    Description: Function URL for the Meal Planning Chat Lambda
-    Value: !GetAtt MealPlanningChatFunctionUrl.FunctionUrl
+    Description: API Gateway URL for the Meal Planning Chat Lambda
+    Value: !Sub "https://${MealPlanningChatApi}.execute-api.${AWS::Region}.amazonaws.com/"
 
   WebsiteUrl:
     Description: S3 static website URL
