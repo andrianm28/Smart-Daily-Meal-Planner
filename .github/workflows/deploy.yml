@@ -47,7 +47,6 @@ jobs:
             --stack-name smart-daily-meal-planner-assistant \
             --s3-bucket ${{ secrets.SAM_DEPLOY_BUCKET }} \
             --s3-prefix smart-daily-meal-planner \
-            --s3-region ap-southeast-5 \
             --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
             --region ap-southeast-5 \
             --no-confirm-changeset \
