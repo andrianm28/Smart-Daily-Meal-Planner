@@ -2,10 +2,6 @@ AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: Smart Daily Meal Planner Assistant — Lambda + Bedrock + S3
 
-Parameters:
-  AccountId:
-    Type: String
-    Default: !Sub "${AWS::AccountId}"
 
 Globals:
   Function:
