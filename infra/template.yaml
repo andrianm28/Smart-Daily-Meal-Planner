@@ -12,7 +12,6 @@ Globals:
     Runtime: python3.12
     Timeout: 60
     MemorySize: 256
-    Role: !GetAtt AppBedrockRole.Arn
     Environment:
       Variables:
         AWS_LAMBDA_EXEC_WRAPPER: /opt/bootstrap
@@ -65,6 +64,7 @@ Resources:
       FunctionName: smart-meal-planner-meal-plan
       CodeUri: ../backend/meal_plan/
       Handler: run.sh
+      Role: !GetAtt AppBedrockRole.Arn
       FunctionUrlConfig:
         AuthType: NONE
         InvokeMode: RESPONSE_STREAM
@@ -78,6 +78,7 @@ Resources:
       FunctionName: smart-meal-planner-chat
       CodeUri: ../backend/meal_planning_chat/
       Handler: run.sh
+      Role: !GetAtt AppBedrockRole.Arn
       FunctionUrlConfig:
         AuthType: NONE
         InvokeMode: RESPONSE_STREAM
