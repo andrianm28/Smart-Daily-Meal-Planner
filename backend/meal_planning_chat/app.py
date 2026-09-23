@@ -70,7 +70,7 @@ def chat():
         role = turn.get("role", "user")
         content = turn.get("content", "")
         if role in ("user", "assistant") and content:
-            messages.append({"role": role, "content": [{"text": content}]})
+            messages.append({"role": role, "content": [{"type": "text", "text": content}]})
 
     # Append the new user message, optionally prefixed with meal plan context
     user_text = message
@@ -107,7 +107,7 @@ def chat():
                 }
             })
 
-    user_content.append({"text": user_text})
+    user_content.append({"type": "text", "text": user_text})
     messages.append({"role": "user", "content": user_content})
 
     request_body = {

@@ -71,7 +71,7 @@ def generate_meal_plan():
                 }
             })
 
-    content.append({"text": prompt})
+    content.append({"type": "text", "text": prompt})
 
     messages = [{"role": "user", "content": content}]
 
